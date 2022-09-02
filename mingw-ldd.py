@@ -16,12 +16,14 @@ def get_dependency(filename):
     return deps
 
 
-def dep_tree(root, prefix=None):
+def dep_tree(root, prefix=None, verbose=False):
     if not prefix:
         arch = get_arch(root)
-        #print('Arch =', arch)
+        if verbose:
+            print('Arch =', arch)
         prefix = '/usr/'+arch+'-w64-mingw32/bin'
-        #print('Using default prefix', prefix)
+        if verbose:
+            print('Using default prefix', prefix)
     dep_dlls = dict()
 
     def dep_tree_impl(root, prefix):
@@ -54,11 +56,14 @@ def main(argv):
             description='Recursively resolves dependencies of PE executables')
     parser.add_argument('-D', '--prefix', metavar='path', type=pathlib.Path,
             help='Set prefix path to search for DLLs')
+    parser.add_argument('-v', '--verbose', action='store_true',
+            help='Display additional information')
     parser.add_argument('executable', type=argparse.FileType('r'),
             help='The PE executable file to check or dependencies')
     args = parser.parse_args(argv[1:])
     args.executable.close()
-    for dll, full_path in dep_tree(args.executable.name, args.prefix).items():
+    for dll, full_path in dep_tree(args.executable.name, args.prefix,
+            args.verbose).items():
         print(' ' * 7, dll, '=>', full_path)
 
 if __name__ == '__main__':
