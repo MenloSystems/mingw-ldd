@@ -16,28 +16,30 @@ def get_dependency(filename):
     return deps
 
 
-def dep_tree(root, prefix=None, verbose=False):
-    if not prefix:
+def dep_tree(root, prefixes=None, verbose=False):
+    if not prefixes:
         arch = get_arch(root)
         if verbose:
             print('Arch =', arch)
-        prefix = '/usr/'+arch+'-w64-mingw32/bin'
+        prefixes = ['/usr/'+arch+'-w64-mingw32/bin']
         if verbose:
-            print('Using default prefix', prefix)
+            print('Using default prefix', prefixes[0])
     dep_dlls = dict()
 
-    def dep_tree_impl(root, prefix):
+    def dep_tree_impl(root):
         for dll in get_dependency(root):
             if dll in dep_dlls:
                 continue
-            full_path = os.path.join(prefix, dll)
-            if os.path.exists(full_path):
+            for prefix in prefixes:
+                full_path = os.path.join(prefix, dll)
+                if not os.path.exists(full_path):
+                    continue
                 dep_dlls[dll] = full_path
-                dep_tree_impl(full_path, prefix=prefix)
-            else:
+                dep_tree_impl(full_path)
+            if dll not in dep_dlls:
                 dep_dlls[dll] = 'not found'
 
-    dep_tree_impl(root, prefix)
+    dep_tree_impl(root)
     return (dep_dlls)
 
 
@@ -55,14 +57,16 @@ def main(argv):
     parser = argparse.ArgumentParser(prog=os.path.basename(argv[0]),
             description='Recursively resolves dependencies of PE executables')
     parser.add_argument('-D', '--prefix', metavar='path', type=pathlib.Path,
-            help='Set prefix path to search for DLLs')
+            action='append', dest='prefixes',
+            help='Add prefix path to search for DLLs, can be given'
+               + ' multiple times')
     parser.add_argument('-v', '--verbose', action='store_true',
             help='Display additional information')
     parser.add_argument('executable', type=argparse.FileType('r'),
             help='The PE executable file to check or dependencies')
     args = parser.parse_args(argv[1:])
     args.executable.close()
-    for dll, full_path in dep_tree(args.executable.name, args.prefix,
+    for dll, full_path in dep_tree(args.executable.name, args.prefixes,
             args.verbose).items():
         print(' ' * 7, dll, '=>', full_path)
 
