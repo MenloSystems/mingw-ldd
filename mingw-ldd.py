@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # WTFPL - Do What the Fuck You Want to Public License
 from __future__ import print_function
+import argparse
+import pathlib
 import pefile
 import os
 import sys
@@ -47,8 +49,17 @@ def get_arch(filename):
         sys.stderr.write('Error: unknown architecture')
         sys.exit(1)
 
-if __name__ == '__main__':
-    filename = sys.argv[1]
-    for dll, full_path in dep_tree(filename).items():
+def main(argv):
+    parser = argparse.ArgumentParser(prog=os.path.basename(argv[0]),
+            description='Recursively resolves dependencies of PE executables')
+    parser.add_argument('-D', '--prefix', metavar='path', type=pathlib.Path,
+            help='Set prefix path to search for DLLs')
+    parser.add_argument('executable', type=argparse.FileType('r'),
+            help='The PE executable file to check or dependencies')
+    args = parser.parse_args(argv[1:])
+    args.executable.close()
+    for dll, full_path in dep_tree(args.executable.name, args.prefix).items():
         print(' ' * 7, dll, '=>', full_path)
 
+if __name__ == '__main__':
+    main(sys.argv)
