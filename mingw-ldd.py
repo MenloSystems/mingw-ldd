@@ -16,14 +16,20 @@ def get_dependency(filename):
     return deps
 
 
-def dep_tree(root, prefixes=None, verbose=False):
-    if not prefixes:
+def dep_tree(root, prefixes=None, thread=None, verbose=False):
+    if not prefixes or thread:
         arch = get_arch(root)
         if verbose:
             print('Arch =', arch)
+    if not prefixes:
         prefixes = ['/usr/'+arch+'-w64-mingw32/bin']
         if verbose:
             print('Using default prefix', prefixes[0])
+    if thread:
+        prefixes.append('/usr/lib/gcc/'+arch+'-w64-mingw32/10-'+thread)
+        if verbose:
+            print('Adding prefix based on thread', prefixes[-1])
+
     dep_dlls = dict()
 
     def dep_tree_impl(root):
@@ -60,6 +66,9 @@ def main(argv):
             action='append', dest='prefixes',
             help='Add prefix path to search for DLLs, can be given'
                + ' multiple times')
+    parser.add_argument('-t', '--thread', choices=['win32', 'posix'],
+            help='Thread model used by GCC. Specifying this adds the'
+               + ' appropriate prefix path to the list')
     parser.add_argument('-v', '--verbose', action='store_true',
             help='Display additional information')
     parser.add_argument('executable', type=argparse.FileType('r'),
@@ -67,7 +76,7 @@ def main(argv):
     args = parser.parse_args(argv[1:])
     args.executable.close()
     for dll, full_path in dep_tree(args.executable.name, args.prefixes,
-            args.verbose).items():
+            args.thread, args.verbose).items():
         print(' ' * 7, dll, '=>', full_path)
 
 if __name__ == '__main__':
