@@ -43,7 +43,7 @@ def dep_tree(root, prefixes=None, thread=None, verbose=False):
                 dep_dlls[dll] = full_path
                 dep_tree_impl(full_path)
             if dll not in dep_dlls:
-                dep_dlls[dll] = 'not found'
+                dep_dlls[dll] = None
 
     dep_tree_impl(root)
     return (dep_dlls)
@@ -59,6 +59,14 @@ def get_arch(filename):
         sys.stderr.write('Error: unknown architecture')
         sys.exit(1)
 
+def output_tree(dep_dlls, list_only=False):
+    for dll, full_path in dep_dlls.items():
+        if not list_only:
+            print(' ' * 7, dll, '=>', full_path if full_path else 'not found')
+        else:
+            if full_path:
+                print(full_path)
+
 def main(argv):
     parser = argparse.ArgumentParser(prog=os.path.basename(argv[0]),
             description='Recursively resolves dependencies of PE executables')
@@ -69,15 +77,17 @@ def main(argv):
     parser.add_argument('-t', '--thread', choices=['win32', 'posix'],
             help='Thread model used by GCC. Specifying this adds the'
                + ' appropriate prefix path to the list')
+    parser.add_argument('-l', '--list-only', action='store_true',
+            help='Only list the full paths of found DLLs')
     parser.add_argument('-v', '--verbose', action='store_true',
             help='Display additional information')
     parser.add_argument('executable', type=argparse.FileType('r'),
             help='The PE executable file to check or dependencies')
     args = parser.parse_args(argv[1:])
     args.executable.close()
-    for dll, full_path in dep_tree(args.executable.name, args.prefixes,
-            args.thread, args.verbose).items():
-        print(' ' * 7, dll, '=>', full_path)
+    tree = dep_tree(args.executable.name, args.prefixes, args.thread,
+            args.verbose)
+    output_tree(tree, args.list_only)
 
 if __name__ == '__main__':
     main(sys.argv)
