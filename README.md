@@ -1,6 +1,6 @@
 ### mingw-ldd
 
-Tool to list dependencies of a dll using python and winedump.
+Tool to list dependencies of a dll using python and the pefile module.
 
 Kudos to yan12125 for the original script:
 https://gist.github.com/yan12125/63c7241596e628553d21
@@ -8,7 +8,7 @@ https://gist.github.com/yan12125/63c7241596e628553d21
 ## Requirements
 
 - Python
-- wine
+- [pefile](https://github.com/erocarrera/pefile)
 
 ## Usage
 
