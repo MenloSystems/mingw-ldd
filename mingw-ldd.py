@@ -22,7 +22,7 @@ def dep_tree(root, prefixes=None, thread=None, verbose=False):
         if verbose:
             print('Arch =', arch)
     if not prefixes:
-        prefixes = ['/usr/'+arch+'-w64-mingw32/bin']
+        prefixes = ['/usr/'+arch+'-w64-mingw32/lib']
         if verbose:
             print('Using default prefix', prefixes[0])
     if thread:
